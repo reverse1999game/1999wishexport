@@ -8,16 +8,13 @@ import asyncio
 class AddHeader:
     def __init__(self):
         self.summonURL = None
-        self.debug     = open("debug.txt", "w")
 
     def request(self, flow):
-        self.debug.write(flow.request.url)
         if (flow.request.method == "GET" and bool(re.search("query/summon", flow.request.url))):
             self.summonURL = flow.request.url
             with open('summonURL.txt',"w") as f:
                 f.write(flow.request.url)
 
-            self.debug.close()
             ctx.master.shutdown()
 
 
@@ -27,7 +24,6 @@ def start():
     pconf = proxy.config.ProxyConfig(opts)
 
     m = DumpMaster(opts, with_termlog=False, with_dumper=False)
-    # m = DumpMaster(opts)
     m.server = proxy.server.ProxyServer(pconf)
     m.addons.add(myaddon)
 
