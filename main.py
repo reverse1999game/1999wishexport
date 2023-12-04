@@ -1,27 +1,23 @@
+import csv
+import json
+import os
+import sys
+import threading
 import tkinter as tk
+from tkinter import ttk
+import requests
 import urllib.request
+
 from proxy_setting import set_proxy_settings, disable_proxy_settings
 from mitmproxy_fetch import threadstart
 from key_gen import creatCA
-import threading
-import os
-import requests
-import json
-import sys
-import csv
 
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-class URLMeter():
-    def __init__(self) -> None:
-        super().__init__()
-        self.url = None
 
-    def update(self, urlstr):
-        self.url = urlstr
 
 class proxyEnableButton(tk.Button):
     def __init__(self) -> None:
@@ -56,8 +52,8 @@ class App(tk.Tk):
         elif __file__:
             self.application_path = os.path.dirname(__file__)
 
-        # if os.path.isfile("summonURL.txt"):
-        #     os.remove("summonURL.txt")
+        if os.path.isfile("summonURL.txt"):
+            os.remove("summonURL.txt")
 
         self.button1 = proxyEnableButton()
         self.button1.place(x=20,y=20)
@@ -79,7 +75,7 @@ class App(tk.Tk):
         self.label2.place(x=400,y=60)
         self.set_label2()
 
-        
+
     def set_label1(self):
         if urllib.request.getproxies():
             self.label1['text'] = "Proxy enable."
@@ -99,35 +95,34 @@ class App(tk.Tk):
 
     def export(self):
         disable_proxy_settings()
-        csvfile = open('allsummon.csv', 'w', newline='')
-        writer = csv.writer(csvfile)
-        
+
         if os.path.isfile("summonURL.txt"):
+            
+            csvfile = open('allsummon.csv', 'w', newline='')
+            writer = csv.writer(csvfile)
+            
             f_ = open("summonURL.txt")
             summonURL = f_.read()
 
-            res = requests.get(summonURL)
-            res = res.json()
+            response = requests.get(summonURL)
+            response = response.json()
 
-            conf_ = open(os.path.join(self.application_path, "config.json"),encoding="utf-8")
+            conf_ = open(os.path.join(self.application_path, "config.json"), encoding="utf-8")
             conf = json.load(conf_)
 
-            confall_ = open(os.path.join(self.application_path, "configAll.json"),encoding="utf-8")
+            confall_ = open(os.path.join(self.application_path, "configAll.json"), encoding="utf-8")
             confall = json.load(confall_)
-            print(confall)
 
             resultList = []
-            for item in reversed(res['data']['pageData']):
+            for item in reversed(response['data']['pageData']):
 
                 if item['poolType']==3 :
                     resultList.extend(item['gainIds'])
-
 
             count=0
             countSIX=0
             summonf = open("summonLOG.txt",'w')
             for i in resultList:
-                print([k for k,v in confall.items() if v == str(i)][0])
                 writer.writerow([[k for k,v in confall.items() if v == str(i)][0], str(i)])
 
                 count+=1
@@ -137,14 +132,14 @@ class App(tk.Tk):
                     summonf.write("\n")
                     count=0
                     countSIX+=1
+
             csvfile.close()
 
             pieList = [countSIX, len(resultList)-countSIX]
 
             fig = Figure(figsize = (5, 5), dpi = 100)
-            canvas = FigureCanvasTkAgg(fig,master = self)
+            canvas = FigureCanvasTkAgg(fig, master=self)
             canvas.draw()
-
             axes = fig.add_subplot()
             axes.pie(pieList,
                     radius=1.5,
@@ -160,5 +155,6 @@ class App(tk.Tk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    
     # pyinstaller -w --onefile --add-data "config.json;." main.py
     # pyinstaller -w --onefile --add-data "config.json;." --add-data "configAll.json;." main.py
